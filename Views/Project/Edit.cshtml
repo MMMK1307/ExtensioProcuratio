@@ -1,0 +1,59 @@
+﻿@using ExtensioProcuratio.Enumerators;
+@model ProjectModel
+@{
+}
+<div class="container-small-form">
+    <form id="registerForm" asp-controller="Project" asp-action="Edit" method="post">
+        <h2>Editar Projeto</h2>
+        <hr />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="@Model.Id" />
+        <input type="hidden" asp-for="@Model.DateCreated" />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Primeiro Nome</label>
+                    <input asp-for="@Model.Name" class="form-control" required aria-required="true" />
+                    <span asp-validation-for="@Model.Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Área de Conhecimento</label>
+                    <select name="Subject" required class="form-select">
+                        <option value="@SubjectAreas.None" selected>None</option>
+                        <option value="@SubjectAreas.Languages">Language</option>
+                        <option value="@SubjectAreas.Mathematics">Mathematics</option>
+                        <option value="@SubjectAreas.Technology">Technology</option>
+                    </select>
+                    <span class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="@Model.Description">Descrição</label>
+            <input asp-for="@Model.Description" required class="form-control" />
+            <span asp-validation-for="@Model.Description" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label>Status</label>
+            <select name="Subject" required class="form-select">
+                <option value=@ProjectStatus.Started selected>@ProjectStatus.Started</option>
+                <option value=@ProjectStatus.Impediment >@ProjectStatus.Impediment</option>
+                <option value=@ProjectStatus.Important>@ProjectStatus.Important</option>
+                <option value=@ProjectStatus.Finished>@ProjectStatus.Finished</option>
+                <option value=@ProjectStatus.Undefined>@ProjectStatus.Undefined</option>
+            </select>
+            <span class="text-danger"></span>
+        </div>
+        <button id="registerSubmit" type="submit" class="btn btn-block btn-primary">Editar, Vai!</button>
+    </form>
+</div>
+<div class="container-link-list">
+    <a role="button" class="btn btn-danger delete"
+       data-id="@Model.Id"
+       data-controller="Project"
+       data-action="Delete"
+       data-body-message="Tens certeza que deseja Deletar o Project @Model.Name"
+       data-redirect-url="/Project/MyProjects">Delete</a>
+</div>

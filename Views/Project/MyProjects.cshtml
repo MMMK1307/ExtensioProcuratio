@@ -1,0 +1,39 @@
+﻿@model IEnumerable<ProjectModel>
+@{
+}
+
+<h1> Meus Projetos </h1>
+<a role="button" class="btn btn-primary" asp-controller="Project" asp-action="Create">Adicionar Novo Projeto</a>
+
+<div class="table-container">
+    <table class="project-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Responsável</th>
+                <th>Data Criação</th>
+                <th>Data Atualização</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in Model)
+            {
+                <tr>
+                    <td data-label="Nome" class="alt-tittle">@project.Name</td>
+                    <td data-label="Descrição">@project.Description</td>
+                    <td data-label="Status">@project.Status</td>
+                    <td data-label="Responsável">@project.ParentName</td>
+                    <td data-label="Data Criação">@project.DateCreated</td>
+                    <td data-label="Data Atualização">@project.DateUpdated .</td>
+                    <td data-label="">
+                        <a role="button" class="w-100 btn btn-primary" asp-controller="Project" asp-action="Edit" asp-route-id="@project.Id">Editar</a>
+                        <a role="button" class="w-100 btn btn-primary" asp-controller="Project" asp-action="Delete" asp-route-id="@project.Id">Deletar</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

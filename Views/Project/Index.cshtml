@@ -1,0 +1,32 @@
+﻿@model IEnumerable<ProjectModel>
+@{
+}
+
+<h1> Projetos Globais </h1>
+<div class="table-container">
+    <table class="project-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Responsável</th>
+                <th>Data Criação</th>
+                <th>Data Atualização</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in Model)
+            {
+                <tr>
+                    <td data-label="Nome" class="alt-tittle">@project.Name</td>
+                    <td data-label="Descrição">@project.Description</td>
+                    <td data-label="Status">@project.Status</td>
+                    <td data-label="Responsável">@project.ParentName</td>
+                    <td data-label="Data Criação">@project.DateCreated</td>
+                    <td data-label="Data Atualização">@project.DateUpdated .</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
