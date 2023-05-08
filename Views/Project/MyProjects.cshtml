@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<ProjectModel>
 @{
+    ViewData["Title"] = "My Projects";
 }
 
 <h1> Meus Projetos </h1>
@@ -13,8 +14,8 @@
                 <th>Descrição</th>
                 <th>Status</th>
                 <th>Responsável</th>
-                <th>Data Criação</th>
-                <th>Data Atualização</th>
+                <th>Criação</th>
+                <th>Atualização</th>
                 <th></th>
             </tr>
         </thead>
@@ -30,7 +31,6 @@
                     <td data-label="Data Atualização">@project.DateUpdated .</td>
                     <td data-label="">
                         <a role="button" class="w-100 btn btn-primary" asp-controller="Project" asp-action="Edit" asp-route-id="@project.Id">Editar</a>
-                        <a role="button" class="w-100 btn btn-primary" asp-controller="Project" asp-action="Delete" asp-route-id="@project.Id">Deletar</a>
                     </td>
                 </tr>
             }

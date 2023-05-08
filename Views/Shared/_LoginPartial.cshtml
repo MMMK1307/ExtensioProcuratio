@@ -1,14 +1,16 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@using ExtensioProcuratio.Helper;
+@using Microsoft.AspNetCore.Identity
 @using ExtensioProcuratio.Areas.Identity.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject UserHelper UserHelper
 
 <ul class="navbar-nav todright">
     @if (SignInManager.IsSignedIn(User))
     {
         <li class="nav-item">
-            <a id="manage" class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @UserManager.GetUserName(User)!</a>
+            <a id="manage" class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Olá @await UserHelper.GetName(User)@*@UserManager.GetUserName(User)*@!</a>
         </li>
         <li class="nav-item">
             <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">

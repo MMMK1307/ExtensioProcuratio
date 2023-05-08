@@ -10,5 +10,9 @@ namespace ExtensioProcuratio.Repositories.Interface
         Task Delete(ProjectModel project);
         Task<ProjectModel> ListProjectById(string projectId);
         Task<IEnumerable<ProjectModel>> ListUserProjects(string userId);
+        Task<int> CountUserProjects(string userId);
+        Task AddAssociateUser(ProjectAssociatesModel associate);
+        Task RemoveAssociateUsers(ProjectAssociatesModel associate);
+        Task<IEnumerable<string>> ListProjectAssociates(string projectId);
     }
 }

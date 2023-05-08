@@ -1,23 +1,20 @@
 ﻿#nullable disable
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using ExtensioProcuratio.Areas.Identity.Data;
+using ExtensioProcuratio.Controllers;
+using ExtensioProcuratio.Enumerators;
+using ExtensioProcuratio.Helper.Interfaces;
+using ExtensioProcuratio.Helper.Models;
+using ExtensioProcuratio.Models;
+using ExtensioProcuratio.Repositories.Interface;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
-using ExtensioProcuratio.Enumerators;
+using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace ExtensioProcuratio.Areas.Identity.Pages.Account
 {
@@ -29,13 +26,15 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IUserRepository _userRepository;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IUserRepository userRepository)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -43,8 +42,8 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _userRepository = userRepository;
         }
-
 
         [BindProperty]
         public InputModel Input { get; set; }
@@ -80,10 +79,13 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
 
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+            [Compare("Password", ErrorMessage = "As senhas não parecem iguais.")]
             public string ConfirmPassword { get; set; }
-        }
 
+            [Required]
+            [Display(Name = "Role")]
+            public string Role { get; set; }
+        }
 
         public async Task OnGetAsync(string returnUrl = null)
         {
@@ -100,33 +102,52 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);                    
+                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
                 user.FirstName = Input.FirstName;
                 user.LastName = Input.LastName;
                 user.Subject = Input.Subject;
-                var result = await _userManager.CreateAsync(user, Input.Password);
 
+                var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
-
                     _logger.LogInformation("User created a new account with password.");
-
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    await _userRepository.CreateRole(new RolesModel() { RoleId = Input.Role, UserId = userId });
+
+                    bool emailSentSuccesfully = false;
+
+                    emailSentSuccesfully = Input.Role switch
+                    {
+                        "1" => false,
+                        "2" => await SendTeacherConfirmEmail(userId, $"{user.FirstName} {user.LastName} ({user.Email})"),
+                        _ => await SendConfirmEmail(code, userId, returnUrl),
+                    };
+
+                    if (!emailSentSuccesfully)
+                    {
+                        TempData["EmailSenderResponse"] =
+                            "Tivemos Algum problema para enviar o e-mail. Espere algums momentos ou reclame com o desenvolvedor \nCOD: SentError";
+
+                        return RedirectToAction(nameof(EmailController.ConfirmationEmail), "Email");
+                    }
+                    
+                    TempData["EmailSenderResponse"] =
+                            $"O email foi enviado com sucesso para {Input.Email}. Caso não esteja em seu inbox, verifique a caixa de spam e/ou tente novamente";
+
+                    if (Input.Role == "2")
+                    {
+                        TempData["EmailSenderResponse"] =
+                            $"O email foi enviado com sucesso para um Admin. Por favor aguarde um tempinho (na verdade muito tempo)";
+                    }
+
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        return RedirectToAction(nameof(EmailController.ConfirmationEmail), "Email");
                     }
                     else
                     {
@@ -165,6 +186,36 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
+        }
+
+        private async Task<bool> SendConfirmEmail(string code, string userId, string returnUrl)
+        {
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                protocol: Request.Scheme);
+
+            var emailContent = new EmailModel(Input.Email, "ExtensionProcuration Confirme seu E-mail",
+                $"Olá jovem, confirme seu e-mail clicando <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
+
+            return await _emailSender.SendEmailAsync(emailContent);
+        }
+
+        private async Task<bool> SendTeacherConfirmEmail(string userId, string name)
+        {
+            var callbackUrl = Url.ActionLink(
+                "ConfirmEmail","Email",
+                values: new { userId });
+
+            var adminEmail = "mikael.strapasson1@gmail.com";
+
+            var emailContent = new EmailModel(adminEmail, "ExtensionProcuration. Confirmação Professor",
+                $"Olá admin. Professor {name} precisa confirmar sua conta. Clique <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
+
+            return await _emailSender.SendEmailAsync(emailContent);
         }
     }
 }

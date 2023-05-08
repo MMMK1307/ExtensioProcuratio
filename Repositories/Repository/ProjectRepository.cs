@@ -1,5 +1,4 @@
-﻿using ExtensioProcuratio.Areas.Identity.Data;
-using ExtensioProcuratio.Data;
+﻿using ExtensioProcuratio.Data;
 using ExtensioProcuratio.Models;
 using ExtensioProcuratio.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -17,24 +16,22 @@ namespace ExtensioProcuratio.Repositories.Repository
 
         public async Task<IEnumerable<ProjectModel>> List()
         {
-            using (var context = _databaseContext)
-            {
-                var projectList = await (from proj in context.Project
-                                         join user in context.Users on proj.UserId equals user.Id
-                                         select new ProjectModel
-                                         {
-                                             Id = proj.Id,
-                                             Name = proj.Name,
-                                             Description = proj.Description,
-                                             UserId = proj.UserId,
-                                             Status = proj.Status,
-                                             DateCreated = proj.DateCreated,
-                                             DateUpdated = proj.DateUpdated,
-                                             ParentName = user.FirstName + " " + user.LastName,
-                                             ParentEmail = user.Email
-                                         }).AsNoTracking().ToListAsync();
-                return projectList;
-            }
+            var projectListQuery = (from proj in _databaseContext.Project
+                                    join user in _databaseContext.Users on proj.UserId equals user.Id
+                                    select new ProjectModel
+                                    {
+                                        Id = proj.Id,
+                                        Name = proj.Name,
+                                        Description = proj.Description,
+                                        UserId = proj.UserId,
+                                        Status = proj.Status,
+                                        DateCreated = proj.DateCreated,
+                                        DateUpdated = proj.DateUpdated,
+                                        ParentName = user.FirstName + " " + user.LastName,
+                                        ParentEmail = user.Email
+                                    }).AsQueryable().AsNoTracking();
+
+            return await projectListQuery.ToListAsync();
         }
 
         public async Task Create(ProjectModel project)
@@ -55,32 +52,82 @@ namespace ExtensioProcuratio.Repositories.Repository
             await _databaseContext.SaveChangesAsync();
         }
 
-        public async Task<ProjectModel> ListProjectById(string userId)
+        public async Task<ProjectModel> ListProjectById(string projectId)
         {
-            return await _databaseContext.Project.AsNoTracking().Where(x => x.Id == userId).FirstOrDefaultAsync() ?? new ProjectModel();
+            var project = await (from proj in _databaseContext.Project
+                                 join user in _databaseContext.Users on proj.UserId equals user.Id
+                                 where proj.Id == projectId
+                                 select new ProjectModel
+                                 {
+                                     Id = proj.Id,
+                                     Name = proj.Name,
+                                     Description = proj.Description,
+                                     UserId = proj.UserId,
+                                     Status = proj.Status,
+                                     DateCreated = proj.DateCreated,
+                                     DateUpdated = proj.DateUpdated,
+                                     ParentName = user.FirstName + " " + user.LastName,
+                                     ParentEmail = user.Email
+                                 }).AsNoTracking().FirstOrDefaultAsync();
+
+            return project ?? new ProjectModel();
         }
 
         public async Task<IEnumerable<ProjectModel>> ListUserProjects(string userId)
         {
-            using (var context = _databaseContext)
+            var projectList = await (from proj in _databaseContext.Project
+                                     join user in _databaseContext.Users on proj.UserId equals user.Id
+                                     where user.Id == userId
+                                     select new ProjectModel
+                                     {
+                                         Id = proj.Id,
+                                         Name = proj.Name,
+                                         Description = proj.Description,
+                                         UserId = proj.UserId,
+                                         Status = proj.Status,
+                                         DateCreated = proj.DateCreated,
+                                         DateUpdated = proj.DateUpdated,
+                                         ParentName = user.FirstName + " " + user.LastName,
+                                         ParentEmail = user.Email
+                                     }).AsNoTracking().AsQueryable().ToListAsync();
+            return projectList;
+        }
+
+        public async Task<int> CountUserProjects(string userId)
+        {
+            return await _databaseContext.Project.AsNoTracking()
+                .Where(x => x.UserId == userId).CountAsync();
+        }
+
+        public async Task AddAssociateUser(ProjectAssociatesModel associate)
+        {
+            await _databaseContext.ProjectAssociates.AddAsync(associate);
+            await _databaseContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveAssociateUsers(ProjectAssociatesModel associate)
+        {
+            var query = _databaseContext.ProjectAssociates
+                .AsQueryable()
+                .Where(c => c.ProjectId == associate.ProjectId && c.UserId == associate.UserId);
+
+            var dbAssociates = await query.FirstOrDefaultAsync();
+
+            if (dbAssociates is null)
             {
-                var projectList = await (from proj in context.Project
-                                         join user in context.Users on proj.UserId equals user.Id
-                                         where user.Id == userId
-                                         select new ProjectModel
-                                         {
-                                             Id = proj.Id,
-                                             Name = proj.Name,
-                                             Description = proj.Description,
-                                             UserId = proj.UserId,
-                                             Status = proj.Status,
-                                             DateCreated = proj.DateCreated,
-                                             DateUpdated = proj.DateUpdated,
-                                             ParentName = user.FirstName + " " + user.LastName,
-                                             ParentEmail = user.Email
-                                         }).AsNoTracking().ToListAsync();
-                return projectList;
+                return;
             }
+
+            _databaseContext.ProjectAssociates.Remove(dbAssociates);
+            await _databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<string>> ListProjectAssociates(string projectId)
+        {
+            var users = _databaseContext.ProjectAssociates
+                .AsQueryable().AsNoTracking().Where(c => c.ProjectId == projectId);
+
+            return await users.Select(c => c.UserId).ToListAsync();
         }
     }
 }

@@ -6,6 +6,7 @@
         Started = 1,
         Finished = 2,
         Impediment = 3,
-        Important = 4
+        Important = 4,
+        Hidden = 5
     }
 }

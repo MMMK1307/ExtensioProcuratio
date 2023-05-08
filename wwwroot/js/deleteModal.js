@@ -9,7 +9,7 @@
                         <div class="modal-content">
                         <div class="modal-header">
                             
-                        <h4 class="modal-title" id="myModalLabel">Confirmar</h4>
+                        <h4 class="modal-title" id="myModalLabel">Confirme a Deleção</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         </div>
                         <div class="modal-body delete-modal-body">
@@ -40,27 +40,29 @@
     });
 
     $("#confirm-delete").on('click', () => {
-        $.ajax({
-            url: url,
-            type: 'POST',
-            success: function (result) {
-                $("#deleteModal").modal('hide');
-                window.location.href = redirectUrl
-            }
-        });
-        //$.get(url)
-        //    .done((result) => {
-        //        if (!redirectUrl) {
-        //            return $(target).parent().parent().hide("slow");
-        //        }
-        //        window.location.href = redirectUrl;
-        //    })
-        //    .fail((error) => {
-        //        if (redirectUrl)
-        //            window.location.href = redirectUrl;
-        //    }).always(() => {
+        //console.log("foi?");
+        //$.ajax({
+        //    url: url,
+        //    type: 'POST',
+        //    success: function (result) {
         //        $("#deleteModal").modal('hide');
-        //    });
+        //        console.log("It happened!");
+        //        window.location.href = redirectUrl
+        //    }
+        //});
+        $.post(url)
+            .done((result) => {
+                if (!redirectUrl) {
+                    return $(target).parent().parent().hide("slow");
+                }
+                window.location.href = redirectUrl;
+            })
+            .fail((error) => {
+                if (redirectUrl)
+                    window.location.href = redirectUrl;
+            }).always(() => {
+                $("#deleteModal").modal('hide');
+            });
     });
 
 }()));

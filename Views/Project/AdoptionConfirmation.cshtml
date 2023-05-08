@@ -1,0 +1,61 @@
+﻿@model ProjectModel
+@using ExtensioProcuratio.Enumerators
+@{
+}
+
+<div class="page-flex-container">
+    <div class="project-info-container">
+
+        <div class="project-info-header">
+            <h2>@Model.Name</h2>
+            @if (Model.Subject != SubjectAreas.None)
+            {
+                <small>@Model.Subject</small>
+            }
+            <p>@Model.Description</p>
+        </div>
+        <div class="project-info-extras">
+            @if (!string.IsNullOrEmpty(Model.Edital))
+            {
+                <p>Edital: @Model.Edital</p>
+            }
+            @if (Model.Bolsa != false)
+            {
+                <p>Bolsa: @Model.Bolsa</p>
+            }
+        </div>
+
+        <div class="project-participants">
+            <p>Proposto por: @Model.ParentName <a href="@Model.ParentEmail">@Model.ParentEmail</a></p>
+            <p>Participantes: @Model.Participants</p>
+        </div>
+
+        <div class="project-status  project-status-@Model.Status">
+            <p>Status: @Model.Status</p>
+            <p>Criado em: @Model.DateCreated</p>
+            @if (Model.DateUpdated != null)
+            {
+                <p>Atualizado em: @Model.DateUpdated</p>
+            }
+        </div>
+    </div>
+    <div class="project-adoption-container">
+        <div class="container-small-form">
+            <form id="registerForm" asp-controller="Email" asp-action="SendProjectSuggestion" method="post">
+                <h2>Resposta de Participação</h2>
+                <hr />
+                <p>Participe do projeto. Ou faça sugestões para melhorar o projeto </p>
+                <input type="hidden" name="projectId" value="@Model.Id"/>
+                <div class="form-group">
+                    <label for="feedback">Feedback</label>
+                    <textarea name="feedback" class="form-control input-bigbox" placeholder="Caso o campo seja deixado em branco o  'Email de Resposta' não será enviado"></textarea>
+                </div>
+                <div class="btn-consecutive-container">
+                    <button type="submit" class="btn btn-block btn-secondary btn-full-consecutive">Sujerir Mudanças</button>
+                    @*<button type="submit" class="btn btn-block btn-primary btn-full-consecutive"></button>*@
+                    <a asp-controller="Email" asp-action="SendAcceptAdoption" asp-route-projectId="@Model.Id">Participar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
