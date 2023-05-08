@@ -1,0 +1,14 @@
+﻿
+<partial name="_EmailResponse" />
+
+<div class="container-small-form">
+    <form id="registerForm" asp-controller="Email" asp-action="RetryConfirmationEmail" method="post">
+        <h2>Confirmar Email</h2>
+        <hr />
+        <div class="form-group">
+            <label>Email</label>
+            <input name="retryEmail" style="width: 100%;" class="form-control" aria-required="true" />
+        </div>
+        <button id="registerSubmit" type="submit" class="btn btn-block btn-primary">Confirmação, Vai!</button>
+    </form>
+</div>

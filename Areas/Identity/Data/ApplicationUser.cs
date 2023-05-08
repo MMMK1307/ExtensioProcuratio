@@ -11,6 +11,8 @@ namespace ExtensioProcuratio.Areas.Identity.Data;
 
 public class ApplicationUser : IdentityUser
 {
+    #nullable disable
+
     [PersonalData]
     [Column(TypeName = "nvarchar(100)")]
     public string FirstName { get; set; }

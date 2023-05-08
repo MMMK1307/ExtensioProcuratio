@@ -1,0 +1,16 @@
+﻿@using ExtensioProcuratio.Areas.Identity.Data;
+@model IEnumerable<ApplicationUser>
+@{
+    string ExtractNameAndSubject(ApplicationUser user)
+    {
+        return user.FirstName + " " + user.LastName;
+    }
+}
+
+<select name="userId" required class="form-select">
+    <option selected></option>
+    @foreach(var user in Model)
+    {
+        <option value="@user.Id">@ExtractNameAndSubject(user)</option>
+    }
+</select>

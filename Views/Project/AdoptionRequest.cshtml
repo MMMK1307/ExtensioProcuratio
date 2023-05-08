@@ -1,0 +1,14 @@
+﻿@model ProjectModel
+
+<div class="container-small-form">
+    <form id="registerForm" asp-controller="Email" asp-action="SendAdoptionRequest" method="post">
+        <h2>Pedido de adoção do Projeto "@Model.Name"</h2>
+        <hr />
+        <input type="hidden" name="projectId" asp-for="@Model.Id" />
+        <div class="form-group">
+            <label>Professores</label>
+            @await Component.InvokeAsync("UserRoles", "2")
+        </div>
+        <button id="registerSubmit" type="submit" class="btn btn-block btn-primary">Confirmação, Vai!</button>
+    </form>
+</div>

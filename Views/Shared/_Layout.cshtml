@@ -30,8 +30,9 @@
                                 <a class="nav-link" asp-area="" asp-controller="Project" asp-action="MyProjects">Meus Projetos</a>
                             </li>
                         </ul>
+                        <partial name="_LoginPartial" />
                     </div>
-                    <partial name="_LoginPartial" />
+
                 </div>
             </nav>
         </header>
@@ -41,9 +42,7 @@
             </main>
         </div>
         <footer id="footer" class="border-top footer text-muted">
-            <div class="container">
-                &copy; 2023 - ExtensioProcuratio - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-            </div>
+            <p>&copy; 2023 - ExtensioProcuratio - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></p>
         </footer>
         <script src="~/lib/jquery/dist/jquery.min.js"></script>
         <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

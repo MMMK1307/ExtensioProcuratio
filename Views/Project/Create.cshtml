@@ -1,18 +1,19 @@
 ﻿@using ExtensioProcuratio.Enumerators;
 @model ProjectModel
 @{
+    ViewData["Title"] = "Creating Project";
 }
 
 <div class="container-small-form">
     <form id="registerForm" asp-controller="Project" asp-action="Create" method="post">
-        <h2>Cadastrar nova conta</h2>
+        <h2>Cadastrar novo Projeto</h2>
         <hr />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Primeiro Nome</label>
+                    <label>Nome do Projeto</label>
                     <input asp-for="@Model.Name" class="form-control" required aria-required="true" />
                     <span asp-validation-for="@Model.Name" class="text-danger"></span>
                 </div>
@@ -20,7 +21,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Área de Conhecimento</label>
-                    <select name="Subject" required class="form-select">
+                    <select asp-for="@Model.Subject" required class="form-select">
                         <option value=@SubjectAreas.None selected>None</option>
                         <option value=@SubjectAreas.Languages>Language</option>
                         <option value=@SubjectAreas.Mathematics>Mathematics</option>
@@ -30,12 +31,51 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-6">
+                <label>Tipo Projeto</label>
+                <select asp-for="@Model.Type" required class="form-select">
+                    <option value="@ProjectType.Research" selected>@ProjectType.Research</option>
+                    <option value="@ProjectType.Education">@ProjectType.Education</option>
+                    <option value="@ProjectType.Extension">@ProjectType.Extension</option>
+                </select>
+                <span class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label>Bolsa?</label>
+                <select asp-for="@Model.Bolsa" required class="form-select">
+                    <option value="@true">Sim</option>
+                    <option value="@false" selected>Não</option>
+                </select>
+                <span class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-ld-6">
+            <label>Status</label>
+            <select asp-for="@Model.Status" required class="form-select">
+                <option value=@ProjectStatus.Started selected>@ProjectStatus.Started</option>
+                <option value=@ProjectStatus.Impediment>@ProjectStatus.Impediment</option>
+                <option value=@ProjectStatus.Important>@ProjectStatus.Important</option>
+                <option value=@ProjectStatus.Finished>@ProjectStatus.Finished</option>
+                <option value=@ProjectStatus.Undefined>@ProjectStatus.Undefined</option>
+            </select>
+            <span class="text-danger"></span>
+        </div>
+        <div class="form-group">
+                <label>Edital</label>
+                <input asp-for="@Model.Edital" style="width: 100%;" class="form-control" aria-required="true" />
+                <span asp-validation-for="@Model.Edital" class="text-danger"></span>
+        </div>
         <div class="form-group">
             <label asp-for="@Model.Description">Descrição</label>
-            <input asp-for="@Model.Description" required class="form-control"/>
+            <textarea asp-for="@Model.Description" required class="form-control input-bigbox"></textarea>
             <span asp-validation-for="@Model.Description" class="text-danger"></span>
+        </div>        
+        <div class="form-group">
+            <label asp-for="@Model.Participants">Participantes</label>
+            <textarea asp-for="@Model.Participants" required class="form-control input-bigbox"></textarea>
+            <span asp-validation-for="@Model.Participants" class="text-danger"></span>
         </div>
-
-        <button id="registerSubmit" type="submit" class="btn btn-block btn-primary">Register</button>
+        <button id="registerSubmit" type="submit" class="btn btn-block btn-primary">Cadastrar</button>
     </form>
 </div>
