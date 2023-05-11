@@ -1,10 +1,10 @@
 ﻿using ExtensioProcuratio.Areas.Identity.Data;
+using ExtensioProcuratio.Helper.Interfaces;
 using ExtensioProcuratio.Models;
 using ExtensioProcuratio.Repositories.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
 
 namespace ExtensioProcuratio.Controllers
 {
@@ -13,12 +13,14 @@ namespace ExtensioProcuratio.Controllers
     {
         private readonly IProjectRepository _projectRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IDateTimeProvider _dateTimeProvider;
 
-        public ProjectController(IProjectRepository projectRepository, UserManager<ApplicationUser> userManager)
+        public ProjectController(IProjectRepository projectRepository, UserManager<ApplicationUser> userManager, IDateTimeProvider dateTimeProvider)
             : base(projectRepository, userManager)
         {
             _projectRepository = projectRepository;
             _userManager = userManager;
+            _dateTimeProvider = dateTimeProvider;
         }
 
         [HttpGet]
@@ -56,7 +58,7 @@ namespace ExtensioProcuratio.Controllers
             }
 
             project.Id = Guid.NewGuid().ToString();
-            project.DateCreated = DateTime.Now;
+            project.DateCreated = _dateTimeProvider.GetBrazil();
             project.UserId = await GetUserId();
 
             await _projectRepository.Create(project);
@@ -93,14 +95,13 @@ namespace ExtensioProcuratio.Controllers
                 return View();
             }
 
-
             if (!await IsUserAssociate(project.Id))
             {
                 return NotFound();
             }
 
             project.UserId = await GetUserId();
-            project.DateUpdated = DateTime.Now;
+            project.DateUpdated = _dateTimeProvider.GetBrazil();
 
             await _projectRepository.Update(project);
 

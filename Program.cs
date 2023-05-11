@@ -28,6 +28,7 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserHelper, UserHelper>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IDateTimeProvider, DateTimeProvider>();
 //Settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SMTP"));
 
