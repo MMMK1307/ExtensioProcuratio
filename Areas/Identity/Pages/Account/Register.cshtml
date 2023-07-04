@@ -14,14 +14,14 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Primeiro Nome</label>
+                    <label asp-for="Input.FirstName">Primeiro Nome</label>
                     <input asp-for="Input.FirstName" class="form-control" aria-required="true" />
                     <span asp-validation-for="Input.FirstName" class="text-danger"></span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Sobrenome</label>
+                    <label asp-for="Input.LastName">Sobrenome</label>
                     <input asp-for="Input.LastName" class="form-control" aria-required="true" />
                     <span asp-validation-for="Input.LastName" class="text-danger"></span>
                 </div>
@@ -34,8 +34,8 @@
         </div>
         <div class="row">
             <div class="col-md-6">
-                <label>Área de Conhecimento</label>
-                <select class="form-select">
+                <label asp-for="Input.Subject">Área de Conhecimento</label>
+                <select asp-for="Input.Subject" class="form-select">
                     <option value=@SubjectAreas.None selected>None</option>
                     <option value=@SubjectAreas.Languages>Language</option>
                     <option value=@SubjectAreas.Mathematics>Mathematics</option>
@@ -44,7 +44,7 @@
                 <span asp-validation-for="Input.Subject" class="text-danger"></span>
             </div>
             <div class="col-md-6">
-                <label>Quem és?</label>
+                <label asp-for="Input.Role">Quem és?</label>
                 <select class="form-select" asp-for="Input.Role">
                     <option value=3 selected>Aluno</option>
                     <option value=2>Professor</option>
@@ -55,14 +55,14 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Senha</label>
+                    <label asp-for="Input.Password">Senha</label>
                     <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" />
                     <span asp-validation-for="Input.Password" class="text-danger"></span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Confirme a Senha</label>
+                    <label asp-for="Input.ConfirmPassword">Confirme a Senha</label>
                     <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" />
                     <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
                 </div>

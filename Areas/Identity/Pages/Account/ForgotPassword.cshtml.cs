@@ -10,11 +10,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using ExtensioProcuratio.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using ExtensioProcuratio.Areas.Identity.Data;
+//using Microsoft.AspNetCore.Identity.UI.Services;
+using ExtensioProcuratio.Helper.Interfaces;
 
 namespace ExtensioProcuratio.Areas.Identity.Pages.Account
 {
@@ -72,10 +73,10 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
-                await _emailSender.SendEmailAsync(
+                await _emailSender.SendEmailAsync(new Helper.Models.EmailModel(
                     Input.Email,
-                    "Reset Password",
-                    $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    "Reset Senha",
+                    $"Clique <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a> para alterar tua senha."));
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

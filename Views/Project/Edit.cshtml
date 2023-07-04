@@ -13,7 +13,7 @@
                 <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">X</button>
             </div>
             <div class="modal-body">
-                Tens certeza que deseja Deletar o Projeto '@Model.Name'
+                Tens certeza que deseja Inativar o Projeto '@Model.Name'
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -33,15 +33,15 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Nome do Projeto</label>
+                    <label asp-for=Name>Nome do Projeto</label>
                     <input asp-for="@Model.Name" class="form-control" required aria-required="true" />
                     <span asp-validation-for="@Model.Name" class="text-danger"></span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Área de Conhecimento</label>
-                    <select name="Subject" required class="form-select">
+                    <label asp-for="Subject">Área de Conhecimento</label>
+                    <select asp-for="Subject" name="Subject" required class="form-select">
                         <option value="@SubjectAreas.None" selected>None</option>
                         <option value="@SubjectAreas.Languages">Language</option>
                         <option value="@SubjectAreas.Mathematics">Mathematics</option>
@@ -53,7 +53,7 @@
         </div>
         <div class="row">
             <div class="col-md-6">
-                <label>Tipo Projeto</label>
+                <label asp-for="Type">Tipo Projeto</label>
                 <select asp-for="@Model.Type" required class="form-select">
                     <option value="@ProjectType.Research" selected>@ProjectType.Research</option>
                     <option value="@ProjectType.Education">@ProjectType.Education</option>
@@ -62,16 +62,16 @@
                 <span class="text-danger"></span>
             </div>
             <div class="col-md-6">
-                <label>Bolsa?</label>
+                <label asp-for="Bolsa">Bolsa?</label>
                 <select asp-for="@Model.Bolsa" required class="form-select">
                     <option value="@true">Sim</option>
-                    <option value="@false" selected>Não</option>
+                    <option value="@false">Não</option>
                 </select>
                 <span class="text-danger"></span>
             </div>
         </div>
         <div class="col-ld-6">
-            <label>Status</label>
+            <label asp-for="Status">Status</label>
             <select asp-for="@Model.Status" required class="form-select">
                 <option value=@ProjectStatus.Started selected>@ProjectStatus.Started</option>
                 <option value=@ProjectStatus.Impediment>@ProjectStatus.Impediment</option>
@@ -82,7 +82,7 @@
             <span class="text-danger"></span>
         </div>
         <div class="form-group">
-            <label>Edital</label>
+            <label asp-for="Edital">Edital</label>
             <input asp-for="@Model.Edital" style="width: 100%;" class="form-control" aria-required="true" />
             <span asp-validation-for="@Model.Edital" class="text-danger"></span>
         </div>

@@ -28,7 +28,18 @@
                     <td data-label="Status">@project.Status</td>
                     <td data-label="Responsável">@project.ParentName</td>
                     <td data-label="Data Criação">@project.DateCreated</td>
-                    <td data-label="Data Atualização">@project.DateUpdated .</td>
+                    <td data-label="Data Atualização">
+                        @{
+                            if (project.DateUpdated is null)
+                            {
+                                @project.DateCreated
+                            }
+                            else
+                            {
+                                @project.DateUpdated
+                            }
+                        }
+                    </td>
                     <td data-label="">
                         <a role="button" class="w-100 btn btn-primary" asp-controller="Project" asp-action="Edit" asp-route-id="@project.Id">Editar</a>
                     </td>
