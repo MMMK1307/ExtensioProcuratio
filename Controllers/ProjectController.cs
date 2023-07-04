@@ -1,4 +1,5 @@
 ﻿using ExtensioProcuratio.Areas.Identity.Data;
+using ExtensioProcuratio.Enumerators;
 using ExtensioProcuratio.Helper.Interfaces;
 using ExtensioProcuratio.Models;
 using ExtensioProcuratio.Repositories.Interface;
@@ -63,7 +64,7 @@ namespace ExtensioProcuratio.Controllers
 
             await _projectRepository.Create(project);
             await _projectRepository.AddAssociateUser(
-                new ProjectAssociatesModel(project.Id, project.UserId));
+                new ProjectAssociatesModel(project.UserId, project.Id));
 
             return RedirectToAction("Index");
         }
@@ -162,7 +163,9 @@ namespace ExtensioProcuratio.Controllers
                 return NotFound();
             }
 
-            await _projectRepository.Delete(project);
+            project.Status = ProjectStatus.Hidden;
+
+            await _projectRepository.Update(project);
 
             return RedirectToAction("MyProjects");
         }

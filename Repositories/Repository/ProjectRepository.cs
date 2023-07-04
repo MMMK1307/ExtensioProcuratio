@@ -1,4 +1,5 @@
 ﻿using ExtensioProcuratio.Data;
+using ExtensioProcuratio.Enumerators;
 using ExtensioProcuratio.Models;
 using ExtensioProcuratio.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace ExtensioProcuratio.Repositories.Repository
         {
             var projectListQuery = (from proj in _databaseContext.Project
                                     join user in _databaseContext.Users on proj.UserId equals user.Id
+                                    where proj.Status != ProjectStatus.Hidden
                                     select new ProjectModel
                                     {
                                         Id = proj.Id,
@@ -25,6 +27,9 @@ namespace ExtensioProcuratio.Repositories.Repository
                                         Description = proj.Description,
                                         UserId = proj.UserId,
                                         Status = proj.Status,
+                                        Edital = proj.Edital,
+                                        Bolsa = proj.Bolsa,
+                                        Participants = proj.Participants,
                                         DateCreated = proj.DateCreated,
                                         DateUpdated = proj.DateUpdated,
                                         ParentName = user.FirstName + " " + user.LastName,
@@ -64,6 +69,9 @@ namespace ExtensioProcuratio.Repositories.Repository
                                      Description = proj.Description,
                                      UserId = proj.UserId,
                                      Status = proj.Status,
+                                     Edital = proj.Edital,
+                                     Bolsa = proj.Bolsa,
+                                     Participants = proj.Participants,
                                      DateCreated = proj.DateCreated,
                                      DateUpdated = proj.DateUpdated,
                                      ParentName = user.FirstName + " " + user.LastName,
@@ -77,7 +85,7 @@ namespace ExtensioProcuratio.Repositories.Repository
         {
             var projectList = await (from proj in _databaseContext.Project
                                      join user in _databaseContext.Users on proj.UserId equals user.Id
-                                     where user.Id == userId
+                                     where user.Id == userId && proj.Status != ProjectStatus.Hidden
                                      select new ProjectModel
                                      {
                                          Id = proj.Id,
@@ -85,6 +93,9 @@ namespace ExtensioProcuratio.Repositories.Repository
                                          Description = proj.Description,
                                          UserId = proj.UserId,
                                          Status = proj.Status,
+                                         Edital = proj.Edital,
+                                         Bolsa = proj.Bolsa,
+                                         Participants = proj.Participants,
                                          DateCreated = proj.DateCreated,
                                          DateUpdated = proj.DateUpdated,
                                          ParentName = user.FirstName + " " + user.LastName,
