@@ -81,7 +81,7 @@ namespace ExtensioProcuratio.Controllers
             return RedirectToAction(nameof(ConfirmationEmail));
         }
 
-        public async Task<IActionResult> SendAdoptionRequest(string userId, string projectId)
+        public async Task<IActionResult> SendAdoptionRequest(string userId, ProjectId projectId)
         {
             var teacher = await _userRepository.GetUserById(userId);
 
@@ -97,12 +97,12 @@ namespace ExtensioProcuratio.Controllers
             return RedirectToAction("MyProjects", "Project");
         }
 
-        public async Task<IActionResult> SendProjectSuggestion(string projectId, string feedback)
+        public async Task<IActionResult> SendProjectSuggestion(ProjectId projectId, string feedback)
         {
             var project = await _projectRepository.ListProjectById(projectId);
             var teacher = await GetUser();
 
-            if (string.IsNullOrEmpty(project.ParentEmail) || project.Id == null)
+            if (string.IsNullOrEmpty(project.ParentEmail))
             {
                 return RedirectToAction("MyProjects", "Project");
             }
@@ -122,12 +122,12 @@ namespace ExtensioProcuratio.Controllers
             return RedirectToAction("MyProjects", "Project");
         }
 
-        public async Task<IActionResult> SendAcceptAdoption(string projectId)
+        public async Task<IActionResult> SendAcceptAdoption(ProjectId projectId)
         {
             var project = await _projectRepository.ListProjectById(projectId);
             var teacher = await GetUser();
 
-            if (string.IsNullOrEmpty(project.ParentEmail) || project.Id == null)
+            if (string.IsNullOrEmpty(project.ParentEmail))
             {
                 return RedirectToAction("MyProjects", "Project");
             }
@@ -168,7 +168,7 @@ namespace ExtensioProcuratio.Controllers
             return await _emailSender.SendEmailAsync(emailContent);
         }   
         
-        private async Task<bool> SendAdoptionEmail(string userId, string userEmail, string projectId)
+        private async Task<bool> SendAdoptionEmail(string userId, string userEmail, ProjectId projectId)
         {
             var callbackUrl = Url.ActionLink(
                 "AdoptionConfirmation", "Project",

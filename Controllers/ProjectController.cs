@@ -58,7 +58,7 @@ namespace ExtensioProcuratio.Controllers
                 return RedirectToAction(nameof(LimitReached));
             }
 
-            project.Id = Guid.NewGuid().ToString();
+            project.Id = new ProjectId(Guid.NewGuid().ToString());
             project.DateCreated = _dateTimeProvider.GetBrazil();
             project.UserId = await GetUserId();
 
@@ -70,14 +70,9 @@ namespace ExtensioProcuratio.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(ProjectId id)
         {
             var project = await _projectRepository.ListProjectById(id);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
 
             if (!await IsUserAssociate(project.Id))
             {
@@ -109,14 +104,9 @@ namespace ExtensioProcuratio.Controllers
             return RedirectToAction("MyProjects");
         }
 
-        public async Task<IActionResult> AdoptionRequest(string projectId)
+        public async Task<IActionResult> AdoptionRequest(ProjectId projectId)
         {
             var project = await _projectRepository.ListProjectById(projectId);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
 
             if (!await IsUserAssociate(projectId))
             {
@@ -126,14 +116,9 @@ namespace ExtensioProcuratio.Controllers
             return View(project);
         }
 
-        public async Task<IActionResult> AdoptionConfirmation(string projectId)
+        public async Task<IActionResult> AdoptionConfirmation(ProjectId projectId)
         {
             var project = await _projectRepository.ListProjectById(projectId);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
 
             if (!await IsUserAssociate(projectId))
             {
@@ -143,7 +128,7 @@ namespace ExtensioProcuratio.Controllers
             return View(project);
         }
 
-        public async Task<IActionResult> SendAdoptionConfirmation(string projectId)
+        public async Task<IActionResult> SendAdoptionConfirmation(ProjectId projectId)
         {
             await Task.CompletedTask;
             return RedirectToAction(nameof(Index));
@@ -154,7 +139,7 @@ namespace ExtensioProcuratio.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(ProjectId id)
         {
             var project = await _projectRepository.ListProjectById(id);
 
@@ -172,26 +157,29 @@ namespace ExtensioProcuratio.Controllers
 
         private static bool IsModelValid(ProjectModel project)
         {
-            bool check = project.Id is not null && project.Name is not null
+            bool check = project.Name is not null
                 && project.Description is not null;
 
             return check;
         }
 
-        private async Task<bool> IsUserOwner(string projectId)
+        private async Task<bool> IsUserOwner(ProjectId projectId)
         {
             var project = await _projectRepository.ListProjectById(projectId);
             return await GetUserId() == project.UserId;
         }
 
-        private async Task<bool> IsUserAssociate(string projectId)
+        private async Task<bool> IsUserAssociate(ProjectId projectId)
         {
             var associatedUsers = await _projectRepository.ListProjectAssociates(projectId);
             var loggedUserId = await GetUserId();
 
-            if (associatedUsers.Contains(loggedUserId))
+            foreach(var user in associatedUsers)
             {
-                return true;
+                if (user == loggedUserId)
+                {
+                    return true;
+                }
             }
 
             return false;

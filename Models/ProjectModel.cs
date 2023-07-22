@@ -1,15 +1,19 @@
 ﻿using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Enumerators;
+using NuGet.DependencyResolver;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ExtensioProcuratio.Models
 {
+    [StronglyTypedId(backingType: StronglyTypedIdBackingType.String)]
+    public partial struct ProjectId { }
+
     public class ProjectModel
     {
         #nullable disable
         [Key]
-        public string Id { get; set; }
+        public ProjectId Id { get; set; }
         
         [MaxLength(100)]
         [Required]
@@ -39,5 +43,7 @@ namespace ExtensioProcuratio.Models
         public ProjectStatus Status { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime? DateUpdated { get; set; }
+
+        public ProjectModel() { }
     }
 }

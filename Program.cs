@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("Dev") ?? throw new InvalidOperationException("Connection string 'Dev' not found.");
+var connectionString = builder.Configuration.GetConnectionString("EpDbContextConnection") ?? throw new InvalidOperationException("Connection string EpDbContextConnection not found.");
 
 //Database
 builder.Services.AddDbContext<DatabaseContext>(options =>
