@@ -1,62 +1,36 @@
-﻿using ExtensioProcuratio.Areas.Identity.Data;
-using ExtensioProcuratio.Helper.Interfaces;
-using ExtensioProcuratio.Helper.Models;
+﻿using ExtensioProcuratio.App.Email.AdoptionFeedback;
+using ExtensioProcuratio.App.Email.AdoptionRequest;
+using ExtensioProcuratio.App.Email.EmailConfirmation;
+using ExtensioProcuratio.App.ProjectAssociates.Commands.Remove;
+using ExtensioProcuratio.App.User.Commands.Update;
+using ExtensioProcuratio.App.User.Queries.GetById;
+using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Models;
-using ExtensioProcuratio.Repositories.Interface;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
-using System.Text;
-using System.Text.Encodings.Web;
 
 namespace ExtensioProcuratio.Controllers
 {
     public class EmailController : BaseController
     {
-        private readonly IEmailSender _emailSender;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IUserRepository _userRepository;
-        private readonly IProjectRepository _projectRepository;
+        private readonly ISender _mediator;
 
         public EmailController(
-            IEmailSender mailSender, UserManager<ApplicationUser> userManager,
-            IProjectRepository projectRepository,IUserRepository userRepository)
-            :base(projectRepository, userManager)
+            UserManager<ApplicationUser> userManager,
+            ISender mediator)
+            : base(userManager, mediator)
         {
-            _emailSender = mailSender;
-            _userManager = userManager;
-            _userRepository = userRepository;
-            _projectRepository = projectRepository;
+            _mediator = mediator;
         }
 
         public IActionResult ConfirmationEmail() => View();
 
         public async Task<IActionResult> RetryConfirmationEmail(string retryEmail)
         {
-            var user = await _userManager.FindByNameAsync(retryEmail);
+            var (Result, Message) = await _mediator.Send(new EmailConfirmationCommand(retryEmail, ""));
 
-            if (user is null || user.EmailConfirmed == true)
-            {
-                TempData["EmailSenderResponse"] =
-                    $"Tens certeza que o e-mail está correto? '{retryEmail}' não existe ou já foi confirmado";
-
-                return RedirectToAction(nameof(ConfirmationEmail));
-            }
-
-            var userId = user.Id;
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-            var mailSentSuccessfully = await SendConfirmEmail(code, userId, retryEmail);
-
-            if (!mailSentSuccessfully)
-            {
-                TempData["EmailSenderResponse"] =
-                    "Tivemos Algum problema para enviar o e-mail. Espere alguns momentos ou reclame com o desenvolvedor \nCOD: SentError";
-                return RedirectToAction(nameof(ConfirmationEmail));
-            }
-
-            TempData["EmailSenderResponse"] =
-                            $"O email foi enviado com sucesso para '{user.Email}'. Caso não esteja em seu inbox, verifique a caixa de spam e/ou tente novamente";
+            TempData["EmailSenderResponse"] = Message;
 
             return RedirectToAction(nameof(ConfirmationEmail));
         }
@@ -69,12 +43,10 @@ namespace ExtensioProcuratio.Controllers
                     "Tivemos Algum problema para enviar o e-mail. Espere alguns momentos ou reclame com o desenvolvedor \nCOD: IncompatibleRole";
                 return RedirectToAction(nameof(ConfirmationEmail));
             }
-            
-            var user = await _userRepository.GetUserById(userId);
 
+            var user = await _mediator.Send(new GetUserByIdQuery(userId));
             user.EmailConfirmed = true;
-
-            await _userRepository.UpdateUser(user);
+            await _mediator.Send(new UpdateUserCommand(user));
 
             TempData["EmailSenderResponse"] = $"Email '{user.Email}' de '{user.FirstName}' foi confirmado";
 
@@ -83,115 +55,43 @@ namespace ExtensioProcuratio.Controllers
 
         public async Task<IActionResult> SendAdoptionRequest(string userId, ProjectId projectId)
         {
-            var teacher = await _userRepository.GetUserById(userId);
+            var (Result, Message) = await _mediator.Send(new AdoptionRequestCommand(projectId, userId));
 
-            var emailSent = await SendAdoptionEmail(userId, teacher.Email, projectId);
-
-            await _projectRepository.AddAssociateUser(new ProjectAssociatesModel(userId, projectId));
-
-            if (!emailSent)
+            if (!Result)
             {
                 return NotFound();
             }
 
+            TempData["EmailSenderResponse"] = Message;
+
             return RedirectToAction("MyProjects", "Project");
         }
 
-        public async Task<IActionResult> SendProjectSuggestion(ProjectId projectId, string feedback)
+        public async Task<IActionResult> SendAdoptionFeedback(ProjectId projectId, string feedback)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
-            var teacher = await GetUser();
+            var userId = await GetUserId();
 
-            if (string.IsNullOrEmpty(project.ParentEmail))
-            {
-                return RedirectToAction("MyProjects", "Project");
-            }
-            
-            feedback = $"Seu projeto {project.Name} recebeu feedback de {teacher.FirstName} {teacher.LastName}.\n" +
-                $"Feedback: {feedback}";
+            await _mediator.Send(new AdoptionFeedbackCommand(projectId, userId, feedback));
 
-            var emailSent = await SendAdoptionFeedbackEmail(project.ParentEmail, feedback);
-
-            if (!emailSent)
-            {
-                return RedirectToAction("MyProjects", "Project");
-            }
-
-            await _projectRepository.RemoveAssociateUsers(new ProjectAssociatesModel(teacher.Id, project.Id));
+            await _mediator.Send(new RemoveProjectAssociateCommand(projectId, userId));
 
             return RedirectToAction("MyProjects", "Project");
         }
 
         public async Task<IActionResult> SendAcceptAdoption(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
-            var teacher = await GetUser();
+            var userId = await GetUserId();
 
-            if (string.IsNullOrEmpty(project.ParentEmail))
-            {
-                return RedirectToAction("MyProjects", "Project");
-            }
+            var feedback = $"Participação confirmada! Entre em contato para mais informações";
 
-            var feedback = $"Seu projeto {project.Name} agora conta com a participação de: {teacher.FirstName} {teacher.LastName}.";
+            var (Result, _) = await _mediator.Send(new AdoptionFeedbackCommand(projectId, userId, feedback));
 
-            var emailSent = await SendAdoptionFeedbackEmail(project.ParentEmail, feedback);
-
-            if (!emailSent)
+            if (!Result)
             {
                 return RedirectToAction("MyProjects", "Project");
             }
 
             return RedirectToAction("MyProjects", "Project");
-        }
-
-
-
-        private async Task<bool> SendConfirmEmail(string code, string userId, string email)
-        {
-            string returnUrl = "";
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-
-            var callbackUrl = Url.Page(
-                "/Account/ConfirmEmail",
-                pageHandler: null,
-                values: new { area = "Identity", userId, code, returnUrl },
-                protocol: Request.Scheme);
-
-            if (callbackUrl is null)
-            {
-                return false;
-            }
-
-            var emailContent = new EmailModel(email, "ExtensionProcuration Confirme seu E-mail",
-                $"Olá jovem, confirme seu e-mail clicando <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
-
-            return await _emailSender.SendEmailAsync(emailContent);
-        }   
-        
-        private async Task<bool> SendAdoptionEmail(string userId, string userEmail, ProjectId projectId)
-        {
-            var callbackUrl = Url.ActionLink(
-                "AdoptionConfirmation", "Project",
-                values: new { projectId });
-
-            if (callbackUrl is null)
-            {
-                return false;
-            }
-
-            var emailContent = new EmailModel(userEmail, "ExtensionProcuration Novo Projeto",
-                $"Olá professor, uma novo projeto foi proposto a vossa pessoa! Clique <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
-
-            return await _emailSender.SendEmailAsync(emailContent);
-        }
-
-        private async Task<bool> SendAdoptionFeedbackEmail(string userEmail, string feedback)
-        {
-
-            var emailContent = new EmailModel(userEmail, "Seu projeto recebeu Feedback",
-                $"Olá jovem! {feedback}");
-
-            return await _emailSender.SendEmailAsync(emailContent);
         }
     }
 }

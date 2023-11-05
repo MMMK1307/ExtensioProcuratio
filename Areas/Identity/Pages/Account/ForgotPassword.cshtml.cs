@@ -2,32 +2,23 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using ExtensioProcuratio.Data;
-using Microsoft.AspNetCore.Identity;
+using ExtensioProcuratio.App.Email.ResetPassword;
+
+//using Microsoft.AspNetCore.Identity.UI.Services;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using ExtensioProcuratio.Areas.Identity.Data;
-//using Microsoft.AspNetCore.Identity.UI.Services;
-using ExtensioProcuratio.Helper.Interfaces;
+using System.ComponentModel.DataAnnotations;
 
 namespace ExtensioProcuratio.Areas.Identity.Pages.Account
 {
     public class ForgotPasswordModel : PageModel
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
+        private readonly ISender _mediator;
 
-        public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(ISender mediator)
         {
-            _userManager = userManager;
-            _emailSender = emailSender;
+            _mediator = mediator;
         }
 
         /// <summary>
@@ -56,27 +47,12 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
         {
             if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByEmailAsync(Input.Email);
-                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                var result = await _mediator.Send(new ResetPasswordEmailCommand(Input.Email));
+
+                if (!result)
                 {
-                    // Don't reveal that the user does not exist or is not confirmed
                     return RedirectToPage("./ForgotPasswordConfirmation");
                 }
-
-                // For more information on how to enable account confirmation and password reset please
-                // visit https://go.microsoft.com/fwlink/?LinkID=532713
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page(
-                    "/Account/ResetPassword",
-                    pageHandler: null,
-                    values: new { area = "Identity", code },
-                    protocol: Request.Scheme);
-
-                await _emailSender.SendEmailAsync(new Helper.Models.EmailModel(
-                    Input.Email,
-                    "Reset Senha",
-                    $"Clique <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a> para alterar tua senha."));
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

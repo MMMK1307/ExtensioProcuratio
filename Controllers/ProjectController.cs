@@ -1,8 +1,14 @@
-﻿using ExtensioProcuratio.Areas.Identity.Data;
-using ExtensioProcuratio.Enumerators;
-using ExtensioProcuratio.Helper.Interfaces;
+﻿using ExtensioProcuratio.App.Project.Commands.Create;
+using ExtensioProcuratio.App.Project.Commands.Delete;
+using ExtensioProcuratio.App.Project.Commands.Update;
+using ExtensioProcuratio.App.Project.Queries.GetAll;
+using ExtensioProcuratio.App.Project.Queries.GetById;
+using ExtensioProcuratio.App.Project.Queries.GetByUser;
+using ExtensioProcuratio.App.ProjectAssociates.Queries.GetByProject;
+using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Models;
-using ExtensioProcuratio.Repositories.Interface;
+using Mapster;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,26 +18,22 @@ namespace ExtensioProcuratio.Controllers
     [Authorize]
     public class ProjectController : BaseController
     {
-        private readonly IProjectRepository _projectRepository;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly ISender _mediator;
 
-        public ProjectController(IProjectRepository projectRepository, UserManager<ApplicationUser> userManager, IDateTimeProvider dateTimeProvider)
-            : base(projectRepository, userManager)
+        public ProjectController(UserManager<ApplicationUser> userManager, ISender mediator)
+            : base(userManager, mediator)
         {
-            _projectRepository = projectRepository;
-            _userManager = userManager;
-            _dateTimeProvider = dateTimeProvider;
+            _mediator = mediator;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index() => View(await _projectRepository.List());
+        public async Task<IActionResult> Index() => View(await _mediator.Send(new GetAllProjectsQuery()));
 
         [HttpGet]
         public async Task<IActionResult> MyProjects()
         {
             var userId = await GetUserId();
-            return View(await _projectRepository.ListUserProjects(userId));
+            return View(await _mediator.Send(new GetProjectByUserQuery(userId)));
         }
 
         public async Task<IActionResult> Create()
@@ -58,13 +60,9 @@ namespace ExtensioProcuratio.Controllers
                 return RedirectToAction(nameof(LimitReached));
             }
 
-            project.Id = new ProjectId(Guid.NewGuid().ToString());
-            project.DateCreated = _dateTimeProvider.GetBrazil();
             project.UserId = await GetUserId();
 
-            await _projectRepository.Create(project);
-            await _projectRepository.AddAssociateUser(
-                new ProjectAssociatesModel(project.UserId, project.Id));
+            await _mediator.Send(project.Adapt<CreateProjectCommand>());
 
             return RedirectToAction("Index");
         }
@@ -72,7 +70,7 @@ namespace ExtensioProcuratio.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(ProjectId id)
         {
-            var project = await _projectRepository.ListProjectById(id);
+            var project = await _mediator.Send(new GetProjectByIdQuery(id));
 
             if (!await IsUserAssociate(project.Id))
             {
@@ -97,16 +95,15 @@ namespace ExtensioProcuratio.Controllers
             }
 
             project.UserId = await GetUserId();
-            project.DateUpdated = _dateTimeProvider.GetBrazil();
 
-            await _projectRepository.Update(project);
+            await _mediator.Send(project.Adapt<UpdateProjectCommand>());
 
             return RedirectToAction("MyProjects");
         }
 
         public async Task<IActionResult> AdoptionRequest(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
 
             if (!await IsUserAssociate(projectId))
             {
@@ -118,7 +115,7 @@ namespace ExtensioProcuratio.Controllers
 
         public async Task<IActionResult> AdoptionConfirmation(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
 
             if (!await IsUserAssociate(projectId))
             {
@@ -128,12 +125,6 @@ namespace ExtensioProcuratio.Controllers
             return View(project);
         }
 
-        public async Task<IActionResult> SendAdoptionConfirmation(ProjectId projectId)
-        {
-            await Task.CompletedTask;
-            return RedirectToAction(nameof(Index));
-        }
-
         public IActionResult LimitReached()
         {
             return View();
@@ -141,16 +132,12 @@ namespace ExtensioProcuratio.Controllers
 
         public async Task<IActionResult> Delete(ProjectId id)
         {
-            var project = await _projectRepository.ListProjectById(id);
+            var result = await _mediator.Send(new DeleteProjectCommand(id, await GetUserId()));
 
-            if (project.UserId != await GetUserId())
+            if (!result)
             {
                 return NotFound();
             }
-
-            project.Status = ProjectStatus.Hidden;
-
-            await _projectRepository.Update(project);
 
             return RedirectToAction("MyProjects");
         }
@@ -165,23 +152,22 @@ namespace ExtensioProcuratio.Controllers
 
         private async Task<bool> IsUserOwner(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
             return await GetUserId() == project.UserId;
         }
 
         private async Task<bool> IsUserAssociate(ProjectId projectId)
         {
-            var associatedUsers = await _projectRepository.ListProjectAssociates(projectId);
+            var associatedUsers = await _mediator.Send(new GetAssociatesByProjectQuery(projectId));
             var loggedUserId = await GetUserId();
 
-            foreach(var user in associatedUsers)
+            foreach (var user in associatedUsers)
             {
                 if (user == loggedUserId)
                 {
                     return true;
                 }
             }
-
             return false;
         }
     }

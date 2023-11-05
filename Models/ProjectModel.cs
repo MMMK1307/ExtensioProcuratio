@@ -1,6 +1,5 @@
 ﻿using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Enumerators;
-using NuGet.DependencyResolver;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,10 +10,11 @@ namespace ExtensioProcuratio.Models
 
     public class ProjectModel
     {
-        #nullable disable
+#nullable disable
+
         [Key]
         public ProjectId Id { get; set; }
-        
+
         [MaxLength(100)]
         [Required]
         public string Name { get; set; }
@@ -25,9 +25,11 @@ namespace ExtensioProcuratio.Models
 
         [ForeignKey("ApplicationUser")]
         public string UserId { get; set; }
+
         public virtual ApplicationUser ApplicationUser { get; set; }
 
-        #nullable enable
+#nullable enable
+
         [NotMapped]
         public string? ParentName { get; set; }
 
@@ -36,6 +38,7 @@ namespace ExtensioProcuratio.Models
 
         [MaxLength(200)]
         public string? Edital { get; set; }
+
         public string? Participants { get; set; }
         public bool Bolsa { get; set; }
         public ProjectType Type { get; set; }
@@ -44,6 +47,7 @@ namespace ExtensioProcuratio.Models
         public DateTime DateCreated { get; set; }
         public DateTime? DateUpdated { get; set; }
 
-        public ProjectModel() { }
+        public ProjectModel()
+        { }
     }
 }

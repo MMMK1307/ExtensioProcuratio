@@ -1,10 +1,149 @@
 ﻿@model IEnumerable<ProjectModel>
 @{
     ViewData["Title"] = "My Projects";
+
+    string StringCheck(string? value)
+    {
+        return value != null ? value : "-------";
+    }
+
+    int projectsPerLine = 2;
+    var projects = Model.ToList();
+    int j = 0;
 }
 
 <h1> Meus Projetos </h1>
 <a role="button" class="btn btn-primary" asp-controller="Project" asp-action="Create">Adicionar Novo Projeto</a>
+
+@while (j < projects.Count)
+{
+    <div class="project-panel-container">
+        @for (int i = 0; i < projectsPerLine; i++)
+        {
+            if (j >= projects.Count)
+            {
+                break;
+            }
+
+            <div class="project-panel">
+                <div class="project-panel-title">
+                    <h2>@projects[j].Name - @projects[j].Subject</h2>
+                </div>
+
+                <div class="project-panel-desc">
+                    <div class="project-panel-title-small">
+                        Criador:
+                    </div>
+                    @projects[j].ParentName - <a>@projects[j].ParentEmail</a>
+                </div>
+
+                <div class="project-panel-desc">
+                    <div class="project-panel-title-small">
+                        Descrição:
+                    </div>
+                    @projects[j].Description
+                </div>
+
+                <div class="project-panel-multi">
+                    <div class="project-panel-desc">
+                        <div class="project-panel-title-small">
+                            Tipo:
+                        </div>
+                        @projects[j].Type
+                    </div>
+                    <div class="project-panel-desc">
+                        <div class="project-panel-title-small">
+                            Edital:
+                        </div>
+                        @StringCheck(projects[j].Edital)
+                    </div>
+                </div>
+
+                <div class="project-panel-multi">
+                    <div class="project-panel-desc">
+                        <div class="project-panel-title-small">
+                            Data Criação:
+                        </div>
+                        @projects[j].DateCreated.ToString("dd/MM/yyyy")
+                    </div>
+
+                    @if (projects[j].DateUpdated != null)
+                    {
+                        <div class="project-panel-desc">
+                            <div class="project-panel-title-small">
+                                Data Atualização:
+                            </div>
+                            @projects[j].DateUpdated!.Value.ToString("dd/MM/yyyy")
+                        </div>
+                    }
+                </div>
+                <div class="project-panel-multi">
+                    <a role="button" class="btn btn-primary" asp-controller="Project" asp-action="Edit" asp-route-id="@projects[j].Id">Editar</a>
+                </div>
+            </div>
+            j++;
+        }
+    </div>
+}
+@*
+@foreach (var project in Model)
+{
+    <div class="project-panel">
+        <div class="project-panel-title">
+            <h2>@project.Name - @project.Subject</h2>
+        </div>
+
+        <div class="project-panel-desc">
+            <div class="project-panel-title-small">
+                Criador:
+            </div>
+            @project.ParentName - <a>@project.ParentEmail</a>
+        </div>
+
+        <div class="project-panel-desc">
+            <div class="project-panel-title-small">
+                Descrição:
+            </div>
+            @project.Description
+        </div>
+
+        <div class="project-panel-multi">
+            <div class="project-panel-desc">
+                <div class="project-panel-title-small">
+                    Tipo:
+                </div>
+                @project.Type
+            </div>
+            <div class="project-panel-desc">
+                <div class="project-panel-title-small">
+                    Edital
+                </div>
+                @StringCheck(project.Edital)
+            </div>
+        </div>
+
+        <div class="project-panel-multi">
+            <div class="project-panel-desc">
+                <div class="project-panel-title-small">
+                    Data Criação:
+                </div>
+                @project.DateCreated.ToString("dd/MM/yyyy")
+            </div>
+
+            @if (project.DateUpdated != null)
+            {
+                <div class="project-panel-desc">
+                    <div class="project-panel-title-small">
+                        Data Atualização:
+                    </div>
+                    @project.DateUpdated.Value.ToString("dd/MM/yyyy")
+                </div>
+            }
+        </div>
+    </div>
+
+
+}
 
 <div class="table-container">
     <table class="project-table">
@@ -48,3 +187,4 @@
         </tbody>
     </table>
 </div>
+*@

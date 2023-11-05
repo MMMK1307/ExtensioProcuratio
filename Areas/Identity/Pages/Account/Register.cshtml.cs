@@ -1,20 +1,17 @@
 ﻿#nullable disable
 
+using ExtensioProcuratio.App.Email.EmailConfirmation;
+using ExtensioProcuratio.App.Email.EmailConfirmationByAdmin;
+using ExtensioProcuratio.App.Roles.Commands.Create;
 using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Controllers;
 using ExtensioProcuratio.Enumerators;
-using ExtensioProcuratio.Helper.Interfaces;
-using ExtensioProcuratio.Helper.Models;
-using ExtensioProcuratio.Models;
-using ExtensioProcuratio.Repositories.Interface;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Encodings.Web;
 
 namespace ExtensioProcuratio.Areas.Identity.Pages.Account
 {
@@ -25,24 +22,21 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
-        private readonly IUserRepository _userRepository;
+        private readonly ISender _mediator;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender,
-            IUserRepository userRepository)
+            ISender mediator)
         {
             _userManager = userManager;
             _userStore = userStore;
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
-            _emailSender = emailSender;
-            _userRepository = userRepository;
+            _mediator = mediator;
         }
 
         [BindProperty]
@@ -116,34 +110,21 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                    await _userRepository.CreateRole(new RolesModel() { RoleId = Input.Role, UserId = userId });
+                    await _mediator.Send(new CreateRoleCommand(userId, Input.Role));
 
-                    bool emailSentSuccesfully = false;
-
-                    emailSentSuccesfully = Input.Role switch
+                    (bool Result, string Message) emailSent = Input.Role switch
                     {
-                        "1" => false,
-                        "2" => await SendTeacherConfirmEmail(userId, $"{user.FirstName} {user.LastName} ({user.Email})"),
-                        _ => await SendConfirmEmail(code, userId, returnUrl),
+                        "1" => (false, "Invalid Role"),
+                        "2" => await _mediator.Send(new EmailConfirmationByAdminCommand(userId, $"{user.FirstName} {user.LastName} ({user.Email})")),
+                        _ => await _mediator.Send(new EmailConfirmationCommand(user.Email, ""))
                     };
 
-                    if (!emailSentSuccesfully)
-                    {
-                        TempData["EmailSenderResponse"] =
-                            "Tivemos Algum problema para enviar o e-mail. Espere algums momentos ou reclame com o desenvolvedor \nCOD: SentError";
+                    TempData["EmailSenderResponse"] = emailSent.Message;
 
+                    if (!emailSent.Result)
+                    {
                         return RedirectToAction(nameof(EmailController.ConfirmationEmail), "Email");
                     }
-                    
-                    TempData["EmailSenderResponse"] =
-                            $"O email foi enviado com sucesso para {Input.Email}. Caso não esteja em seu inbox, verifique a caixa de spam e/ou tente novamente";
-
-                    if (Input.Role == "2")
-                    {
-                        TempData["EmailSenderResponse"] =
-                            $"O email foi enviado com sucesso para um Admin. Por favor aguarde um tempinho (na verdade muito tempo)";
-                    }
-
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
@@ -186,36 +167,6 @@ namespace ExtensioProcuratio.Areas.Identity.Pages.Account
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
             return (IUserEmailStore<ApplicationUser>)_userStore;
-        }
-
-        private async Task<bool> SendConfirmEmail(string code, string userId, string returnUrl)
-        {
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-
-            var callbackUrl = Url.Page(
-                "/Account/ConfirmEmail",
-                pageHandler: null,
-                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                protocol: Request.Scheme);
-
-            var emailContent = new EmailModel(Input.Email, "ExtensionProcuration Confirme seu E-mail",
-                $"Olá jovem, confirme seu e-mail clicando <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
-
-            return await _emailSender.SendEmailAsync(emailContent);
-        }
-
-        private async Task<bool> SendTeacherConfirmEmail(string userId, string name)
-        {
-            var callbackUrl = Url.ActionLink(
-                "ConfirmEmail","Email",
-                values: new { userId });
-
-            var adminEmail = "mikael.strapasson1@gmail.com";
-
-            var emailContent = new EmailModel(adminEmail, "ExtensionProcuration. Confirmação Professor",
-                $"Olá admin. Professor {name} precisa confirmar sua conta. Clique <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>aqui</a>.");
-
-            return await _emailSender.SendEmailAsync(emailContent);
         }
     }
 }

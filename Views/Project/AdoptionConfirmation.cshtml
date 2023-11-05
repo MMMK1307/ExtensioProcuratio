@@ -41,11 +41,11 @@
     </div>
     <div class="project-adoption-container">
         <div class="container-small-form">
-            <form id="registerForm" asp-controller="Email" asp-action="SendProjectSuggestion" method="post">
+            <form id="registerForm" asp-controller="Email" asp-action="SendAdoptionFeedback" method="post">
                 <h2>Resposta de Participação</h2>
                 <hr />
                 <p>Participe do projeto. Ou faça sugestões para melhorar o projeto </p>
-                <input type="hidden" name="projectId" value="@Model.Id"/>
+                <input type="hidden" name="projectId" value="@Model.Id" />
                 <div class="form-group">
                     <label for="feedback">Feedback</label>
                     <textarea name="feedback" class="form-control input-bigbox" placeholder="Caso o campo seja deixado em branco o  'Email de Resposta' não será enviado"></textarea>
