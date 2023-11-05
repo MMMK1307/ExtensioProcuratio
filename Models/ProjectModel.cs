@@ -5,12 +5,16 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ExtensioProcuratio.Models
 {
+    [StronglyTypedId(backingType: StronglyTypedIdBackingType.String)]
+    public partial struct ProjectId { }
+
     public class ProjectModel
     {
-        #nullable disable
+#nullable disable
+
         [Key]
-        public string Id { get; set; }
-        
+        public ProjectId Id { get; set; }
+
         [MaxLength(100)]
         [Required]
         public string Name { get; set; }
@@ -21,9 +25,11 @@ namespace ExtensioProcuratio.Models
 
         [ForeignKey("ApplicationUser")]
         public string UserId { get; set; }
+
         public virtual ApplicationUser ApplicationUser { get; set; }
 
-        #nullable enable
+#nullable enable
+
         [NotMapped]
         public string? ParentName { get; set; }
 
@@ -32,6 +38,7 @@ namespace ExtensioProcuratio.Models
 
         [MaxLength(200)]
         public string? Edital { get; set; }
+
         public string? Participants { get; set; }
         public bool Bolsa { get; set; }
         public ProjectType Type { get; set; }
@@ -39,5 +46,8 @@ namespace ExtensioProcuratio.Models
         public ProjectStatus Status { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime? DateUpdated { get; set; }
+
+        public ProjectModel()
+        { }
     }
 }

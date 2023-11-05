@@ -1,34 +1,39 @@
-﻿using ExtensioProcuratio.Areas.Identity.Data;
+﻿using ExtensioProcuratio.App.Project.Commands.Create;
+using ExtensioProcuratio.App.Project.Commands.Delete;
+using ExtensioProcuratio.App.Project.Commands.Update;
+using ExtensioProcuratio.App.Project.Queries.GetAll;
+using ExtensioProcuratio.App.Project.Queries.GetById;
+using ExtensioProcuratio.App.Project.Queries.GetByUser;
+using ExtensioProcuratio.App.ProjectAssociates.Queries.GetByProject;
+using ExtensioProcuratio.Areas.Identity.Data;
 using ExtensioProcuratio.Models;
-using ExtensioProcuratio.Repositories.Interface;
+using Mapster;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
 
 namespace ExtensioProcuratio.Controllers
 {
     [Authorize]
     public class ProjectController : BaseController
     {
-        private readonly IProjectRepository _projectRepository;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ISender _mediator;
 
-        public ProjectController(IProjectRepository projectRepository, UserManager<ApplicationUser> userManager)
-            : base(projectRepository, userManager)
+        public ProjectController(UserManager<ApplicationUser> userManager, ISender mediator)
+            : base(userManager, mediator)
         {
-            _projectRepository = projectRepository;
-            _userManager = userManager;
+            _mediator = mediator;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index() => View(await _projectRepository.List());
+        public async Task<IActionResult> Index() => View(await _mediator.Send(new GetAllProjectsQuery()));
 
         [HttpGet]
         public async Task<IActionResult> MyProjects()
         {
             var userId = await GetUserId();
-            return View(await _projectRepository.ListUserProjects(userId));
+            return View(await _mediator.Send(new GetProjectByUserQuery(userId)));
         }
 
         public async Task<IActionResult> Create()
@@ -55,26 +60,17 @@ namespace ExtensioProcuratio.Controllers
                 return RedirectToAction(nameof(LimitReached));
             }
 
-            project.Id = Guid.NewGuid().ToString();
-            project.DateCreated = DateTime.Now;
             project.UserId = await GetUserId();
 
-            await _projectRepository.Create(project);
-            await _projectRepository.AddAssociateUser(
-                new ProjectAssociatesModel(project.Id, project.UserId));
+            await _mediator.Send(project.Adapt<CreateProjectCommand>());
 
             return RedirectToAction("Index");
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(ProjectId id)
         {
-            var project = await _projectRepository.ListProjectById(id);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
+            var project = await _mediator.Send(new GetProjectByIdQuery(id));
 
             if (!await IsUserAssociate(project.Id))
             {
@@ -93,28 +89,21 @@ namespace ExtensioProcuratio.Controllers
                 return View();
             }
 
-
             if (!await IsUserAssociate(project.Id))
             {
                 return NotFound();
             }
 
             project.UserId = await GetUserId();
-            project.DateUpdated = DateTime.Now;
 
-            await _projectRepository.Update(project);
+            await _mediator.Send(project.Adapt<UpdateProjectCommand>());
 
             return RedirectToAction("MyProjects");
         }
 
-        public async Task<IActionResult> AdoptionRequest(string projectId)
+        public async Task<IActionResult> AdoptionRequest(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
 
             if (!await IsUserAssociate(projectId))
             {
@@ -124,14 +113,9 @@ namespace ExtensioProcuratio.Controllers
             return View(project);
         }
 
-        public async Task<IActionResult> AdoptionConfirmation(string projectId)
+        public async Task<IActionResult> AdoptionConfirmation(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
-
-            if (project.Id == null)
-            {
-                return NotFound();
-            }
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
 
             if (!await IsUserAssociate(projectId))
             {
@@ -139,12 +123,6 @@ namespace ExtensioProcuratio.Controllers
             }
 
             return View(project);
-        }
-
-        public async Task<IActionResult> SendAdoptionConfirmation(string projectId)
-        {
-            await Task.CompletedTask;
-            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult LimitReached()
@@ -152,44 +130,44 @@ namespace ExtensioProcuratio.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(ProjectId id)
         {
-            var project = await _projectRepository.ListProjectById(id);
+            var result = await _mediator.Send(new DeleteProjectCommand(id, await GetUserId()));
 
-            if (project.UserId != await GetUserId())
+            if (!result)
             {
                 return NotFound();
             }
-
-            await _projectRepository.Delete(project);
 
             return RedirectToAction("MyProjects");
         }
 
         private static bool IsModelValid(ProjectModel project)
         {
-            bool check = project.Id is not null && project.Name is not null
+            bool check = project.Name is not null
                 && project.Description is not null;
 
             return check;
         }
 
-        private async Task<bool> IsUserOwner(string projectId)
+        private async Task<bool> IsUserOwner(ProjectId projectId)
         {
-            var project = await _projectRepository.ListProjectById(projectId);
+            var project = await _mediator.Send(new GetProjectByIdQuery(projectId));
             return await GetUserId() == project.UserId;
         }
 
-        private async Task<bool> IsUserAssociate(string projectId)
+        private async Task<bool> IsUserAssociate(ProjectId projectId)
         {
-            var associatedUsers = await _projectRepository.ListProjectAssociates(projectId);
+            var associatedUsers = await _mediator.Send(new GetAssociatesByProjectQuery(projectId));
             var loggedUserId = await GetUserId();
 
-            if (associatedUsers.Contains(loggedUserId))
+            foreach (var user in associatedUsers)
             {
-                return true;
+                if (user == loggedUserId)
+                {
+                    return true;
+                }
             }
-
             return false;
         }
     }

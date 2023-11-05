@@ -47,10 +47,8 @@ namespace ExtensioProcuratio.Repositories.Repository
 
         public async Task<IEnumerable<ApplicationUser>> ListUsersByRole(string roleId)
         {
-            using var context = _dbContext;
-
-            var users = await (from user in context.Users
-                               join roles in context.UserRoles on user.Id equals roles.UserId
+            var users = await (from user in _dbContext.Users
+                               join roles in _dbContext.UserRoles on user.Id equals roles.UserId
                                where roles.RoleId == roleId
                                select new ApplicationUser
                                {

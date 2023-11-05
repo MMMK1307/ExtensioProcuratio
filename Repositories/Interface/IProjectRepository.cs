@@ -1,4 +1,5 @@
-﻿using ExtensioProcuratio.Models;
+﻿using ExtensioProcuratio.Areas.Identity.Data;
+using ExtensioProcuratio.Models;
 
 namespace ExtensioProcuratio.Repositories.Interface
 {
@@ -8,11 +9,11 @@ namespace ExtensioProcuratio.Repositories.Interface
         Task Create(ProjectModel project);
         Task Update(ProjectModel project);
         Task Delete(ProjectModel project);
-        Task<ProjectModel> ListProjectById(string projectId);
+        Task<ProjectModel> ListProjectById(ProjectId projectId);
         Task<IEnumerable<ProjectModel>> ListUserProjects(string userId);
         Task<int> CountUserProjects(string userId);
         Task AddAssociateUser(ProjectAssociatesModel associate);
         Task RemoveAssociateUsers(ProjectAssociatesModel associate);
-        Task<IEnumerable<string>> ListProjectAssociates(string projectId);
+        Task<IEnumerable<string>> ListProjectAssociates(ProjectId projectId);
     }
 }
